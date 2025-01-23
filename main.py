@@ -11,6 +11,7 @@ from modules.utils import read_file, sleep
 
 def get_action() -> str:
     choices = [
+        Choice("Full flow", "full"),
         Choice("Create account and claim badges", "init"),
         Choice("Fund account", "fund"),
         Choice("Withdraw funds", "withdraw"),
@@ -67,6 +68,7 @@ def main():
         safe = Safe(**account, counter=f"[{index}/{len(accounts)}]")
 
         try:
+            (action == "full") and safe.run_full_flow()
             (action == "init") and safe.init()
             (action == "fund") and safe.fund_account()
             (action == "withdraw") and safe.withdraw_funds()

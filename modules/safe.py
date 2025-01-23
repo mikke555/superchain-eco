@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from eth_account import Account
 from faker import Faker
 from web3 import constants
+from web3.types import TxReceipt
 
 import settings
 from models.responses.bages import Badges
@@ -94,7 +95,7 @@ class Safe(Wallet):
         )
         return data
 
-    def create_account(self):
+    def create_account(self) -> TxReceipt:
         """Function: createProxyWithNonce(address _singleton,bytes initializer,uint256 saltNonce)"""
         contract = self.get_contract(SAFE_PROXY_FACTORY, abi=SAFE_PROXY_FACTORY_ABI)
         initializer = self.encode_initializer()
@@ -197,14 +198,14 @@ class Safe(Wallet):
             time.sleep(5)
 
     # Actions
-    def init(self) -> None:
+    def init(self) -> bool:
         account_addr = self.get_superchain_account()
 
         if account_addr != constants.ADDRESS_ZERO:
             logger.warning(f"{self.label} Account already registered")
         else:
             if not self.create_account():
-                return
+                return False
 
             while True:
                 account_addr = self.get_superchain_account()
@@ -225,7 +226,9 @@ class Safe(Wallet):
             data=[self.address, points],
         )
 
-    def fund_account(self):
+        return True
+
+    def fund_account(self) -> TxReceipt:
         account_addr = self.get_superchain_account()
 
         min_wei, max_wei = [wei(val) for val in settings.FUND_VALUE]
@@ -236,7 +239,7 @@ class Safe(Wallet):
             logger.warning(
                 f"{self.label} Amount {transfer_value / 10**18:.6f} exceeds wallet balance \n"
             )
-            return
+            return False
 
         tx = self.get_tx_data(value=transfer_value, to=account_addr, get_gas=True)
 
@@ -262,17 +265,17 @@ class Safe(Wallet):
 
         return signature
 
-    def withdraw_funds(self):
+    def withdraw_funds(self) -> TxReceipt:
         account = self.get_superchain_account()
         balance = self.w3.eth.get_balance(account)
 
         if account == constants.ADDRESS_ZERO:
             logger.warning(f"{self.label} Account does not exist \n")
-            return
+            return False
 
         if not balance:
             logger.warning(f"{self.label} No balance to withdraw \n")
-            return
+            return False
 
         account_contract = self.get_contract(account, abi=SAFE_L2_ABI)
         contract_tx = account_contract.functions.execTransaction(
@@ -290,17 +293,17 @@ class Safe(Wallet):
 
         return self.send_tx(contract_tx, tx_label=f"{self.label} Withdraw funds")
 
-    def disperse(self) -> None:
+    def disperse(self) -> bool:
         account = self.get_superchain_account()
         balance = self.w3.eth.get_balance(account)
 
         if account == constants.ADDRESS_ZERO:
             logger.warning(f"{self.label} Account does not exist \n")
-            return
+            return False
 
         if not balance:
             logger.warning(f"{self.label} No balance to disperse \n")
-            return
+            return False
 
         num_accounts_to_create = random.randint(*settings.DISPERSE_RECIPIENTS)
 
@@ -336,3 +339,20 @@ class Safe(Wallet):
 
             if tx_status and index <= num_accounts_to_create:
                 random_sleep(*settings.SLEEP_BETWEEN_ACTIONS)
+
+        return True
+
+    def run_full_flow(self):
+        if not self.init():
+            return
+        random_sleep(*settings.SLEEP_BETWEEN_ACTIONS)
+
+        if not self.fund_account():
+            return
+        random_sleep(*settings.SLEEP_BETWEEN_ACTIONS)
+
+        if not self.disperse():
+            return
+        random_sleep(*settings.SLEEP_BETWEEN_ACTIONS)
+
+        self.withdraw_funds()
