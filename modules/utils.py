@@ -3,16 +3,17 @@ import os
 import random
 import time
 from datetime import datetime
+from decimal import Decimal
 
 from tqdm import tqdm
 from web3 import Web3
 
 
-def wei(value):
+def wei(value: float) -> int:
     return Web3.to_wei(value, "ether")
 
 
-def ether(value):
+def ether(value: int) -> Decimal:
     return Web3.from_wei(value, "ether")
 
 

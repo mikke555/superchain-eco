@@ -31,7 +31,7 @@ def get_action() -> str:
     )
 
     action = questionary.select(
-        "SUPERCHAIN ECO Account:",
+        "SUPERCHAIN ECO Master",
         choices=choices,
         style=custom_style,
     ).ask()

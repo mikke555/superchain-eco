@@ -172,7 +172,9 @@ class Safe(Wallet):
         while True:
             retry_count += 1
 
-            logger.debug(f"{self.label} Attempting to claim")
+            logger.debug(
+                f"{self.label} Attempting to claim {retry_count}/{max_retries}"
+            )
             resp = self.post(f"/api/user/{safe_address}/badges/claim")
 
             if resp.status_code == 201:
@@ -185,6 +187,8 @@ class Safe(Wallet):
                     badges = [img_url.split("/")[-1][:-4] for img_url in data.badgeImages]  # fmt: skip
                     logger.success(f"{self.label} Badges claimed: {', '.join(badges)}")
                     logger.success(f"{self.label} Points claimed: {data.totalPoints}")  # fmt: skip
+                else:
+                    logger.warning(f"{self.label} No new badges to claim")
 
                 break  # Exit the loop on successful claim
 
