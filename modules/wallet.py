@@ -119,5 +119,18 @@ class Wallet(HttpClient):
             if "insufficient funds" in str(err):
                 logger.error(f"{tx_label} | Insufficient funds \n")
 
+            if "already known" in str(err):
+                try:
+                    tx_hash
+                except:
+                    tx_hash = ""
+                logger.warning(
+                    f"{tx_label} | Couldn't get tx hash due to an RPC error, assuming it's confirmed \n"
+                )
+                return tx_hash or True
+
+            else:
+                logger.error(err)
+
         except Web3Exception as err:
             logger.error(f"{tx_label} | {err} \n")
