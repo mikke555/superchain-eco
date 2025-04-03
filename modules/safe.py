@@ -9,7 +9,7 @@ from web3 import constants
 from web3.types import TxReceipt
 
 import settings
-from models.responses.bages import Badges
+from models.responses.bages import BadgesResponse
 from models.responses.claim import ClaimResponse
 from modules.config import (
     SAFE4337_MODULE,
@@ -141,7 +141,7 @@ class Safe(Wallet):
 
     def get_points(self, safe_address) -> int:
         resp = self.get(f"/api/user/{safe_address}/badges")
-        badges = Badges(currentBadges=resp.json()["currentBadges"])
+        badges = BadgesResponse(currentBadges=resp.json()["currentBadges"])
 
         total_points = badges.total_points()
         logger.debug(f"{self.label} Total points: {total_points} \n")
@@ -149,37 +149,38 @@ class Safe(Wallet):
         return total_points
 
     def claim_badges(self, safe_address) -> None:
-        max_retries = 10
-        retry_count = 0
+        max_attempts = 10
+        retry = 0
 
         while True:
-            retry_count += 1
+            retry += 1
 
-            logger.debug(f"{self.label} Attempting to claim {retry_count}/{max_retries}")
+            logger.debug(f"{self.label} Attempting to claim {retry}/{max_attempts}")
             resp = self.post(f"/api/user/{safe_address}/badges/claim")
 
             if resp.status_code == 201:
                 data = ClaimResponse(**resp.json())
 
-                if data.updatedBadges:
-                    for badge in data.updatedBadges:
-                        logger.success(f"{self.label} Claimed {badge.metadata.name} tier {badge.claimableTier}")
+                if not data.updatedBadges:
+                    logger.warning(f"{self.label} No new badges to claim")
+                    return
+
+                for badge in data.updatedBadges:
+                    logger.success(f"{self.label} Claimed: {badge.metadata.name} tier {badge.claimableTier}")
+
+                if data.totalPoints:
+                    logger.success(f"{self.label} Claimed: {data.totalPoints} points")
 
                 if data.isLevelUp:
                     logger.success(f"{self.label} Level up: {data.isLevelUp}")
-
-                if data.totalPoints:
-                    logger.success(f"{self.label} Points claimed: {data.totalPoints}")
-                else:
-                    logger.warning(f"{self.label} No new badges to claim")
 
                 break  # Exit the loop on successful claim
 
             else:
                 logger.error(f"{self.label} Unable to claim: <{resp.status_code}> {resp.text}")
 
-            if retry_count >= max_retries:
-                logger.error(f"{self.label} Exceeded max attempts ({max_retries})")
+            if retry >= max_attempts:
+                logger.error(f"{self.label} Exceeded max attempts ({max_attempts})")
                 break
 
             time.sleep(5)
