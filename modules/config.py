@@ -9,7 +9,7 @@ from models.network import Network
 
 ethereum = Network(
     name="ethereum",
-    rpc_url="https://rpc.ankr.com/eth",
+    rpc_url="https://eth.drpc.org",
     explorer="https://etherscan.io",
     eip_1559=True,
     native_token="ETH",
@@ -17,7 +17,7 @@ ethereum = Network(
 
 optimism = Network(
     name="optimism",
-    rpc_url="https://rpc.ankr.com/optimism",
+    rpc_url="https://mainnet.optimism.io",
     explorer="https://optimistic.etherscan.io",
     eip_1559=True,
     native_token="ETH",

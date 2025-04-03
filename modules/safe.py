@@ -45,55 +45,41 @@ class Safe(Wallet):
         return ens_domain[:-4] if ens_domain else Faker().user_name()
 
     def encode_setup_data(self) -> bytes:
-        contract = self.get_contract(
-            address=SUPERCHAIN_ACCOUNT_SETUP, abi=SUPERCHAIN_ACCOUNT_SETUP_ABI
-        )
+        contract = self.get_contract(address=SUPERCHAIN_ACCOUNT_SETUP, abi=SUPERCHAIN_ACCOUNT_SETUP_ABI)
 
         data = contract.encode_abi(
+            # fmt: off
             "setupSuperChainAccount",
-            # modules (address[])
-            # superChainModule (address)
-            # guard (address)
-            # owner (address)
-            # seed (tuple)
-            # superChainID (string)
             args=(
-                [SAFE4337_MODULE],
-                SUPERCHAIN_MODULE,
-                SUPERCHAIN_GUARD,
-                self.address,
-                Noun.generate_seed(),
-                self.get_username(),
+                [SAFE4337_MODULE],          # modules (address[])
+                SUPERCHAIN_MODULE,          # superChainModule (address)
+                SUPERCHAIN_GUARD,           # guard (address)
+                self.address,               # owner (address)
+                Noun.generate_seed(),       # seed (tuple)
+                self.get_username(),        # superChainID (string)
             ),
         )
-        return data
+        return data  # fmt: on
 
     def encode_initializer(self) -> bytes:
         contract = self.get_contract(SAFE_L2, abi=SAFE_L2_ABI)
         setup_data_bytes = self.encode_setup_data()
 
         data = contract.encode_abi(
+            # fmt: off
             "setup",
-            # _owners (address[])
-            # _threshold (uint256)
-            # to (address)
-            # data (bytes)
-            # fallbackHandler (address)
-            # paymentToken (address)
-            # payment (uint256)
-            # paymentReceiver (address)
-            args=(
-                [self.address],
-                1,
-                SUPERCHAIN_ACCOUNT_SETUP,
-                setup_data_bytes,
-                SAFE4337_MODULE,
-                constants.ADDRESS_ZERO,
-                0,  # payment (uint256)
-                constants.ADDRESS_ZERO,
+            args=(  
+                [self.address],             # _owners (address[])
+                1,                          # _threshold (uint256)
+                SUPERCHAIN_ACCOUNT_SETUP,   # to (address)
+                setup_data_bytes,           # data (bytes)
+                SAFE4337_MODULE,            # fallbackHandler (address)
+                constants.ADDRESS_ZERO,     # paymentToken (address)
+                0,                          # payment (uint256)
+                constants.ADDRESS_ZERO,     # paymentReceiver (address)
             ),
         )
-        return data
+        return data  # fmt: on
 
     def create_account(self) -> TxReceipt:
         """Function: createProxyWithNonce(address _singleton,bytes initializer,uint256 saltNonce)"""
@@ -101,12 +87,9 @@ class Safe(Wallet):
         initializer = self.encode_initializer()
 
         contract_tx = contract.functions.createProxyWithNonce(
-            # _singleton (address)
-            # initializer (bytes)
-            # saltNonce (uint256)
-            SAFE_L2,
-            initializer,
-            0,
+            SAFE_L2,  # _singleton (address)
+            initializer,  # initializer (bytes)
+            0,  # saltNonce (uint256)
         ).build_transaction(self.get_tx_data())
 
         return self.send_tx(contract_tx, tx_label=f"{self.label} Create account")
@@ -172,28 +155,28 @@ class Safe(Wallet):
         while True:
             retry_count += 1
 
-            logger.debug(
-                f"{self.label} Attempting to claim {retry_count}/{max_retries}"
-            )
+            logger.debug(f"{self.label} Attempting to claim {retry_count}/{max_retries}")
             resp = self.post(f"/api/user/{safe_address}/badges/claim")
 
             if resp.status_code == 201:
                 data = ClaimResponse(**resp.json())
 
+                if data.updatedBadges:
+                    for badge in data.updatedBadges:
+                        logger.success(f"{self.label} Claimed {badge.metadata.name} tier {badge.claimableTier}")
+
                 if data.isLevelUp:
                     logger.success(f"{self.label} Level up: {data.isLevelUp}")
 
-                if data.badgeImages:
-                    badges = [img_url.split("/")[-1][:-4] for img_url in data.badgeImages]  # fmt: skip
-                    logger.success(f"{self.label} Badges claimed: {', '.join(badges)}")
-                    logger.success(f"{self.label} Points claimed: {data.totalPoints}")  # fmt: skip
+                if data.totalPoints:
+                    logger.success(f"{self.label} Points claimed: {data.totalPoints}")
                 else:
                     logger.warning(f"{self.label} No new badges to claim")
 
                 break  # Exit the loop on successful claim
 
             else:
-                logger.error(f"{self.label} Unable to claim: <{resp.status_code}> {resp.text}")  # fmt: skip
+                logger.error(f"{self.label} Unable to claim: <{resp.status_code}> {resp.text}")
 
             if retry_count >= max_retries:
                 logger.error(f"{self.label} Exceeded max attempts ({max_retries})")
@@ -240,9 +223,7 @@ class Safe(Wallet):
         balance = self.get_balance()
 
         if transfer_value > balance:
-            logger.warning(
-                f"{self.label} Amount {transfer_value / 10**18:.6f} exceeds wallet balance \n"
-            )
+            logger.warning(f"{self.label} Amount {transfer_value / 10**18:.6f} exceeds wallet balance \n")
             return False
 
         tx = self.get_tx_data(value=transfer_value, to=account_addr, get_gas=True)

@@ -9,7 +9,7 @@ from tqdm import tqdm
 from web3 import Web3
 
 
-def wei(value: float) -> int:
+def wei(value: float | Decimal) -> int:
     return Web3.to_wei(value, "ether")
 
 
