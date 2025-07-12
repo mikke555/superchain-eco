@@ -219,6 +219,9 @@ class Safe(Wallet):
     def fund_account(self) -> TxReceipt:
         account_addr = self.get_superchain_account()
 
+        if account_addr == constants.ADDRESS_ZERO:
+            return
+
         min_wei, max_wei = [wei(val) for val in settings.FUND_VALUE]
         transfer_value = random.randint(min_wei, max_wei)
         balance = self.get_balance()

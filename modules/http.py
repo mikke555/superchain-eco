@@ -13,9 +13,6 @@ class HttpClient(requests.Session):
         if proxy:
             self.proxies.update({"http": proxy, "https": proxy})
 
-    def __exit__(self):
-        self.close()
-
     def _request(self, method, endpoint, *args, **kwargs):
         url = f"{self.base_url}{endpoint}"
         return super().request(method, url, *args, **kwargs)
