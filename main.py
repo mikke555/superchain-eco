@@ -11,11 +11,11 @@ from modules.utils import read_file, sleep
 
 def get_action() -> str:
     choices = [
-        Choice("Full flow", "full"),
-        Choice("Create account and claim badges", "init"),
-        Choice("Fund account", "fund"),
-        Choice("Withdraw funds", "withdraw"),
-        Choice("Disperse dust", "disperse"),
+        Choice("Claim badges", "init"),
+        Choice("Fund & Transact", "full"),
+        # Choice("Fund account", "fund"),
+        # Choice("Withdraw funds", "withdraw"),
+        # Choice("Disperse dust", "disperse"),
         Choice("Quit", "quit"),
     ]
 
