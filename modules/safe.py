@@ -139,9 +139,36 @@ class Safe(Wallet):
         if resp.status_code != 200:
             raise Exception(f"Failed to authorize")
 
+        token = resp.json()["token"]
+        self.headers.update({"Authorization": f"Bearer {token}"})
+
     def get_points(self, safe_address) -> int:
         resp = self.get(f"/api/user/{safe_address}/badges")
         badges = BadgesResponse(currentBadges=resp.json()["currentBadges"])
+
+        # Check if wallet has any badges at all
+        if not badges.currentBadges:
+            logger.warning(f"{self.label} No badges found, skipping CSV write")
+            return 0
+
+        # Collect badge data
+        badge_data = [self.address]
+        for badge_id in settings.BADGE_IDS_TO_CHECK:
+            badge = badges.get_badge_by_id(badge_id)
+            if badge:
+                # Handle None currentCount by using 0 as default
+                current_count = badge.currentCount if badge.currentCount is not None else 0
+                logger.info(f"{self.label} Badge: {badge.metadata.name} {badge.tier} {current_count}")
+                badge_data.extend([badge.metadata.name, current_count])
+            else:
+                # Add empty values for missing badges to maintain consistency
+                badge_data.extend(["", 0])
+
+        write_to_csv(
+            path=f"reports/{datetime.today():%Y-%m-%d}.csv",
+            headers=None,
+            data=badge_data,
+        )
 
         total_points = badges.total_points()
         logger.debug(f"{self.label} Total points: {total_points} \n")
@@ -190,7 +217,7 @@ class Safe(Wallet):
         account_addr = self.get_superchain_account()
 
         if account_addr != constants.ADDRESS_ZERO:
-            logger.warning(f"{self.label} Account already registered")
+            logger.warning(f"{self.label} Account exists")
         else:
             if not self.create_account():
                 return False

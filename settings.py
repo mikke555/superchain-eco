@@ -5,13 +5,16 @@
 USE_PROXY = True
 SHUFFLE_WALLETS = False
 
-SLEEP_BETWEEN_WALLETS = [10, 20]
-SLEEP_BETWEEN_ACTIONS = [10, 20]
+SLEEP_BETWEEN_WALLETS = [5, 10]
+SLEEP_BETWEEN_ACTIONS = [5, 10]
 
 ########################################################################
 #                           Action Settings                            #
 ########################################################################
 
+# Base=1, OP=2, Mode=3, Unichain=10, Ink=16, S8=24
+BADGE_IDS_TO_CHECK = ["1", "2", "3", "10", "16", "24"]
+
 FUND_VALUE = [0.00003, 0.00006]  # $0.10 - $0.20
 DISPERSE_VALUE = [0.000001, 0.000002]
-DISPERSE_RECIPIENTS = [2, 4]
+DISPERSE_RECIPIENTS = [5, 10]

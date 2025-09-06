@@ -39,9 +39,7 @@ def sleep(sleep_time, to_sleep=None, label="Sleeping"):
 
     desc = datetime.now().strftime("%H:%M:%S")
 
-    for _ in tqdm(
-        range(x), desc=desc, bar_format=f"{{desc}} | {label} {{n_fmt}}/{{total_fmt}}"
-    ):
+    for _ in tqdm(range(x), desc=desc, bar_format=f"{{desc}} | {label} {{n_fmt}}/{{total_fmt}}"):
         time.sleep(1)
 
     print()  # line break
@@ -57,7 +55,7 @@ def write_to_csv(path, headers, data):
     with open(path, mode="a", newline="") as file:
         writer = csv.writer(file)
 
-        if file.tell() == 0:
+        if file.tell() == 0 and headers is not None:
             writer.writerow(headers)
 
         writer.writerow(data)
