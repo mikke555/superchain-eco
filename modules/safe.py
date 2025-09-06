@@ -95,10 +95,6 @@ class Safe(Wallet):
         return self.send_tx(contract_tx, tx_label=f"{self.label} Create account")
 
     # API requests
-    def get_auth_token(self) -> None:
-        logger.debug(f"{self.label} Getting session cookie")
-        self.get("/auth/session")
-
     def get_nonce(self) -> str:
         logger.debug(f"{self.label} Querying nonce")
         resp = self.get("/auth/nonce")
@@ -230,7 +226,6 @@ class Safe(Wallet):
                 time.sleep(5)
 
         # API requests
-        self.get_auth_token()
         self.login()
         self.claim_badges(account_addr)
         points = self.get_points(account_addr)
